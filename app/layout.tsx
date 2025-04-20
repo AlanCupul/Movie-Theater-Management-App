@@ -1,4 +1,3 @@
-import DeployButton from "@/components/deploy-button";
 import { EnvVarWarning } from "@/components/env-var-warning";
 import HeaderAuth from "@/components/header-auth";
 import { ThemeSwitcher } from "@/components/theme-switcher";
@@ -14,8 +13,8 @@ const defaultUrl = process.env.VERCEL_URL
 
 export const metadata = {
   metadataBase: new URL(defaultUrl),
-  title: "Movie Theater Ticketing System",
-  description: "Movie Theater Ticketing System",
+  title: "Movie Theater",
+  description: "Movie Theater",
 };
 
 const geistSans = Geist({
@@ -38,14 +37,17 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <main className="min-h-screen flex flex-col items-center">
-            <div className="flex-1 w-full flex flex-col gap-20 items-center">
+            <div className="flex-1 w-full flex flex-col gap-8 items-center">
               <nav className="sticky top-0 z-50 w-full flex justify-center border-b border-b-foreground/10 h-16 bg-background/80 backdrop-blur">
                 <div className="w-full max-w-6xl flex justify-between items-center p-3 px-5 text-sm">
                   <div className="flex gap-5 items-center font-semibold">
-                    <Link href={"/"}>Movie Theater Management System</Link>
-                    <div className="flex items-center gap-2">
-                      <DeployButton />
-                    </div>
+                    <Link href={"/"}>Movie Theater</Link>
+                    <nav className="flex gap-3 ml-6">
+                      <Link href="/movies" className="hover:underline">Movies</Link>
+                      <Link href="/theaters" className="hover:underline">Theaters</Link>
+                      <Link href="/showings" className="hover:underline">Showings</Link>
+                      <Link href="/dashboard" className="hover:underline font-semibold">Dashboard</Link>
+                    </nav>
                   </div>
                   <div className="flex items-center gap-2">
                     {!hasEnvVars ? <EnvVarWarning /> : <HeaderAuth />}
@@ -59,15 +61,7 @@ export default function RootLayout({
 
               <footer className="w-full flex items-center justify-center border-t mx-auto text-center text-xs gap-8 py-8">
                 <p>
-                  Powered by{" "}
-                  <a
-                    href="https://supabase.com/?utm_source=create-next-app&utm_medium=template&utm_term=nextjs"
-                    target="_blank"
-                    className="font-bold hover:underline"
-                    rel="noreferrer"
-                  >
-                    Supabase
-                  </a>
+                &copy; 2025 Movie Theater
                 </p>
               </footer>
             </div>

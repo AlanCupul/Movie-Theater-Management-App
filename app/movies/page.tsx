@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function MoviesPage() {
   const [movies, setMovies] = useState<any[]>([]);
+  const [allMovies, setAllMovies] = useState<any[]>([]);
   const [upcomingMovies, setUpcomingMovies] = useState<any[]>([]);
   const [featuredMovies, setFeaturedMovies] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -15,9 +16,31 @@ export default function MoviesPage() {
     const supabase = createClient();
     async function fetchMovies() {
       setLoading(true);
-      const { data, error } = await supabase.from("movies").select("*").order("release_date", { ascending: false });
+      const now = new Date();
+      const thirtyDaysAgo = new Date(now);
+      thirtyDaysAgo.setDate(now.getDate() - 30);
+      // Fetch all movies
+      const { data: all, error: allError } = await supabase
+        .from("movies")
+        .select("*")
+        .eq("status", true)
+        .order("release_date", { ascending: false });
+      if (allError) {
+        console.error("Error fetching all movies:", allError);
+        setAllMovies([]);
+      } else {
+        setAllMovies(all || []);
+      }
+      // Fetch new movies (last 30 days)
+      const { data, error } = await supabase
+        .from("movies")
+        .select("*")
+        .gte("release_date", thirtyDaysAgo.toISOString())
+        .lte("release_date", now.toISOString())
+        .order("release_date", { ascending: false });
       if (error) {
-        console.error("Error fetching movies:", error);
+        console.error("Error fetching new movies:", error);
+        setMovies([]);
       } else {
         setMovies(data || []);
       }
@@ -67,16 +90,16 @@ export default function MoviesPage() {
   }
 
   // New: next 4, Browse: rest
-  const newMovies = movies.slice(3, 7);
-  const browseMovies = movies.slice(7, 19); // Limit for demo
+  const newMovies = movies.slice(0, 4);
+  const browseMovies = allMovies;
 
   return (
-    <div className="max-w-6xl mx-auto p-6 flex flex-col gap-12">
-      <h1 className="text-3xl font-bold mb-4">Movies</h1>
+    <div className="max-w-6xl mx-auto pt-2 pb-6 flex flex-col gap-12">
+      <h1 className="text-3xl font-bold">Movies</h1>
 
       {/* Featured Movies */}
-      <section>
-        <div className="flex items-center justify-between mb-3">
+      <section className="mt-0">
+        <div className="flex items-center justify-between mb-1">
           <h2 className="text-2xl font-semibold">Featured Movies</h2>
           <Button asChild>
             <Link href="/movies/featured">View All</Link>
@@ -92,15 +115,9 @@ export default function MoviesPage() {
               )}
               <CardHeader className="flex-1 flex flex-col items-center p-4 pb-2">
                 <CardTitle className="text-lg text-center w-full line-clamp-2">{movie.name}</CardTitle>
-                <div className="text-xs text-muted-foreground mb-1 text-center w-full">{formatReleaseDate(movie.release_date)}</div>
-                {typeof movie.rating === "number" && (
-                  <div className="text-xs text-yellow-700 dark:text-yellow-400 mb-1 text-center font-semibold w-full">
-                    Rating: {movie.rating.toFixed(1)} / 10
-                  </div>
-                )}
               </CardHeader>
               <CardContent className="flex flex-col items-center gap-2 pb-4">
-                <Link href={`/movies/${movie.movie_id}`} className="text-primary hover:underline text-xs font-medium">View Details</Link>
+                <Link href={`/movies/${movie.movie_id}`} className="text-primary hover:underline text-xs font-medium">View Showings</Link>
               </CardContent>
             </Card>
           ))}
@@ -125,15 +142,9 @@ export default function MoviesPage() {
               )}
               <CardHeader className="flex-1 flex flex-col items-center p-4 pb-2">
                 <CardTitle className="text-base text-center w-full line-clamp-2">{movie.name}</CardTitle>
-                <div className="text-xs text-muted-foreground mb-1 text-center w-full">{formatReleaseDate(movie.release_date)}</div>
-                {typeof movie.rating === "number" && (
-                  <div className="text-xs text-yellow-700 dark:text-yellow-400 mb-1 text-center font-semibold w-full">
-                    Rating: {movie.rating.toFixed(1)} / 10
-                  </div>
-                )}
               </CardHeader>
               <CardContent className="flex flex-col items-center gap-2 pb-4">
-                <Link href={`/movies/${movie.movie_id}`} className="text-primary hover:underline text-xs font-medium">Details</Link>
+                <Link href={`/movies/${movie.movie_id}`} className="text-primary hover:underline text-xs font-medium">View Showings</Link>
               </CardContent>
             </Card>
           ))}
@@ -159,15 +170,9 @@ export default function MoviesPage() {
               )}
               <CardHeader className="flex-1 flex flex-col items-center p-4 pb-2">
                 <CardTitle className="text-base text-center w-full line-clamp-2">{movie.name}</CardTitle>
-                <div className="text-xs text-muted-foreground mb-1 text-center w-full">{formatReleaseDate(movie.release_date)}</div>
-                {typeof movie.rating === "number" && (
-                  <div className="text-xs text-yellow-700 dark:text-yellow-400 mb-1 text-center font-semibold w-full">
-                    Rating: {movie.rating.toFixed(1)} / 10
-                  </div>
-                )}
               </CardHeader>
               <CardContent className="flex flex-col items-center gap-2 pb-4">
-                <Link href={`/movies/${movie.movie_id}`} className="text-primary hover:underline text-xs font-medium">Details</Link>
+                <Link href={`/movies/${movie.movie_id}`} className="text-primary hover:underline text-xs font-medium">View Showings</Link>
               </CardContent>
             </Card>
           ))}
@@ -189,15 +194,9 @@ export default function MoviesPage() {
               )}
               <CardHeader className="flex-1 flex flex-col items-center p-2 pb-1">
                 <CardTitle className="text-xs text-center w-full line-clamp-2 font-medium">{movie.name}</CardTitle>
-                <div className="text-[10px] text-muted-foreground mb-1 text-center w-full">{formatReleaseDate(movie.release_date)}</div>
-                {typeof movie.rating === "number" && (
-                  <div className="text-[10px] text-yellow-700 dark:text-yellow-400 mb-1 text-center font-semibold w-full">
-                    Rating: {movie.rating.toFixed(1)} / 10
-                  </div>
-                )}
               </CardHeader>
               <CardContent className="flex flex-col items-center gap-1 pb-2">
-                <Link href={`/movies/${movie.movie_id}`} className="text-primary hover:underline text-xs">Details</Link>
+                <Link href={`/movies/${movie.movie_id}`} className="text-primary hover:underline text-xs font-medium">View Showings</Link>
               </CardContent>
             </Card>
           ))}

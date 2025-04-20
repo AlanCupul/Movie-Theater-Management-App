@@ -34,53 +34,31 @@ interface Movie {
   duration?: number;
   rating?: string;
   featured?: boolean;
+  status: boolean;
 }
 
 export default function ManageMoviesPage() {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState<Partial<Movie>>({});
+  const [form, setForm] = useState<Partial<Movie>>({ status: true });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const supabase = createClient();
   const router = useRouter();
-  const [authLoading, setAuthLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
   const { toast } = useToast();
   const inputSectionRef = useRef<HTMLFormElement | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<number|null>(null);
 
   useEffect(() => {
-    // Client-side auth protection
-    const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.replace("/sign-in");
-      } else {
-        setUser(user);
-      }
-      setAuthLoading(false);
-    };
-    checkAuth();
-  }, [router, supabase]);
+    fetchMovies();
+  }, []);
 
   useEffect(() => {
-    if (!authLoading && user) {
+    if (!loading && movies.length === 0) {
       fetchMovies();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authLoading, user]);
-
-  // If still checking auth, show loading
-  if (authLoading) {
-    return <div className="max-w-3xl mx-auto p-6 text-center">Checking authentication...</div>;
-  }
-
-  // If not authenticated, don't render the rest (redirect will happen)
-  if (!user) {
-    return null;
-  }
+  }, [loading, movies]);
 
   async function fetchMovies() {
     setLoading(true);
@@ -104,10 +82,10 @@ export default function ManageMoviesPage() {
       setSaving(false);
       return;
     }
-    const { error } = await supabase.from("movies").insert([{ ...form, rating: ratingNum }]);
+    const { error } = await supabase.from("movies").insert([{ ...form, rating: ratingNum, status: true }]);
     if (error) toast({ title: "Error", description: "Error adding movie: " + error.message, variant: "destructive" });
     else {
-      setForm({});
+      setForm({ status: true });
       fetchMovies();
       toast({ title: "Success", description: "Movie added!" });
     }
@@ -116,7 +94,7 @@ export default function ManageMoviesPage() {
 
   async function handleEdit(movie: Movie) {
     setEditingId(movie.movie_id);
-    setForm(movie);
+    setForm({ ...movie, status: movie.status ?? true });
     scrollToInput();
   }
 
@@ -136,7 +114,7 @@ export default function ManageMoviesPage() {
     if (error) toast({ title: "Error", description: "Error updating movie: " + error.message, variant: "destructive" });
     else {
       setEditingId(null);
-      setForm({});
+      setForm({ status: true });
       fetchMovies();
       toast({ title: "Success", description: "Movie updated!" });
     }
@@ -150,11 +128,11 @@ export default function ManageMoviesPage() {
   async function confirmDelete() {
     if (pendingDeleteId == null) return;
     setSaving(true);
-    const { error } = await supabase.from("movies").delete().eq("movie_id", pendingDeleteId);
-    if (error) toast({ title: "Error", description: "Error deleting movie: " + error.message, variant: "destructive" });
+    const { error } = await supabase.from("movies").update({ status: false }).eq("movie_id", pendingDeleteId);
+    if (error) toast({ title: "Error", description: "Error marking movie inactive: " + error.message, variant: "destructive" });
     else {
       fetchMovies();
-      toast({ title: "Success", description: "Movie deleted!", variant: "default" });
+      toast({ title: "Success", description: "Movie marked inactive!", variant: "default" });
     }
     setSaving(false);
     setDeleteDialogOpen(false);
@@ -163,7 +141,7 @@ export default function ManageMoviesPage() {
 
   function handleCancelEdit() {
     setEditingId(null);
-    setForm({});
+    setForm({ status: true });
   }
 
   function scrollToInput() {
@@ -173,7 +151,7 @@ export default function ManageMoviesPage() {
   return (
     <>
       <Toaster />
-      <div className="max-w-3xl mx-auto p-6">
+      <div className="max-w-6xl mx-auto">
         <h1 className="text-2xl font-bold mb-6">Manage Movies</h1>
 
         {/* Add/Edit Movie Form */}
@@ -274,6 +252,15 @@ export default function ManageMoviesPage() {
             </div>
             <div className="flex items-center gap-2 mt-6">
               <Checkbox
+                id="status"
+                name="status"
+                checked={!!form.status}
+                onCheckedChange={checked => setForm(f => ({ ...f, status: !!checked }))}
+              />
+              <Label htmlFor="status">Active</Label>
+            </div>
+            <div className="flex items-center gap-2 mt-6">
+              <Checkbox
                 id="featured"
                 checked={!!form.featured}
                 onCheckedChange={checked => setForm(f => ({ ...f, featured: !!checked }))}
@@ -286,9 +273,9 @@ export default function ManageMoviesPage() {
               {editingId ? "Update Movie" : "Add Movie"}
             </Button>
             {editingId && (
-              <button type="button" className="bg-muted text-foreground px-4 py-2 rounded border" onClick={handleCancelEdit}>
+              <Button type="button" variant="outline" onClick={handleCancelEdit}>
                 Cancel
-              </button>
+              </Button>
             )}
           </div>
         </form>
@@ -298,22 +285,25 @@ export default function ManageMoviesPage() {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>ID</TableHead>
                 <TableHead>Poster</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Release Date</TableHead>
                 <TableHead>Duration</TableHead>
                 <TableHead>Rating</TableHead>
                 <TableHead className="text-center">Featured</TableHead>
+                <TableHead className="text-center">Status</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
-                <TableRow><TableCell colSpan={7} className="text-center p-4">Loading...</TableCell></TableRow>
+                <TableRow><TableCell colSpan={9} className="text-center p-4">Loading...</TableCell></TableRow>
               ) : movies.length === 0 ? (
-                <TableRow><TableCell colSpan={7} className="text-center p-4">No movies found.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={9} className="text-center p-4">No movies found.</TableCell></TableRow>
               ) : movies.map((movie) => (
                 <TableRow key={movie.movie_id}>
+                  <TableCell className="text-center">{movie.movie_id}</TableCell>
                   <TableCell className="text-center">
                     {movie.movie_poster_url ? (
                       <img src={movie.movie_poster_url} alt={movie.name} className="h-20 aspect-[27/40] object-cover mx-auto rounded shadow" />
@@ -339,32 +329,37 @@ export default function ManageMoviesPage() {
                   <TableCell className="text-center">
                     <Checkbox checked={!!movie.featured} disabled className="pointer-events-none" />
                   </TableCell>
-                  <TableCell className="flex gap-2">
-                    <Button type="button" size="sm" variant="outline" onClick={() => handleEdit(movie)}>
-                      Edit
-                    </Button>
-                    <AlertDialog open={deleteDialogOpen && pendingDeleteId === movie.movie_id} onOpenChange={open => {
-                      setDeleteDialogOpen(open);
-                      if (!open) setPendingDeleteId(null);
-                    }}>
-                      <AlertDialogTrigger asChild>
-                        <Button type="button" size="sm" variant="destructive" onClick={() => promptDelete(movie.movie_id)}>
-                          Delete
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Movie</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete <span className="font-semibold">{movie.name}</span>? This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={confirmDelete} disabled={saving}>Delete</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                  <TableCell className="text-center">
+                    <Checkbox checked={!!movie.status} disabled className="pointer-events-none" />
+                  </TableCell>
+                  <TableCell className="align-middle">
+                    <div className="flex items-center gap-2 h-full">
+                      <Button type="button" size="sm" variant="outline" onClick={() => handleEdit(movie)}>
+                        Edit
+                      </Button>
+                      <AlertDialog open={deleteDialogOpen && pendingDeleteId === movie.movie_id} onOpenChange={open => {
+                        setDeleteDialogOpen(open);
+                        if (!open) setPendingDeleteId(null);
+                      }}>
+                        <AlertDialogTrigger asChild>
+                          <Button type="button" size="sm" variant="destructive" onClick={() => promptDelete(movie.movie_id)}>
+                            Mark Inactive
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Mark Movie Inactive</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to mark <span className="font-semibold">{movie.name}</span> inactive? This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={confirmDelete} disabled={saving}>Mark Inactive</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

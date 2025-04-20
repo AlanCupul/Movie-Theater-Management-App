@@ -39,7 +39,7 @@ export default function UpcomingMoviesPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
+    <div className="max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">Upcoming Movies</h1>
         <Button asChild>
@@ -69,20 +69,12 @@ export default function UpcomingMoviesPage() {
               )}
               <CardHeader className="flex-1 flex flex-col items-center p-4 pb-2">
                 <CardTitle className="text-base text-center w-full line-clamp-2">{movie.name}</CardTitle>
-                <div className="text-xs text-muted-foreground mb-1 text-center w-full">
-                  {formatReleaseDate(movie.release_date)}
-                </div>
-                {typeof movie.rating === "number" && (
-                  <div className="text-xs text-yellow-700 dark:text-yellow-400 mb-1 text-center font-semibold w-full">
-                    Rating: {movie.rating.toFixed(1)} / 10
-                  </div>
-                )}
               </CardHeader>
               <CardContent className="flex flex-col items-center gap-2 pb-4">
                 {movie.duration && (
                   <div className="text-xs text-muted-foreground mb-2">{movie.duration} min</div>
                 )}
-                <Link href={`/movies/${movie.movie_id}`} className="text-primary hover:underline text-xs font-medium">Details</Link>
+                <Link href={`/movies/${movie.movie_id}`} className="text-primary hover:underline text-xs font-medium">View Showings</Link>
               </CardContent>
             </Card>
           ))}
