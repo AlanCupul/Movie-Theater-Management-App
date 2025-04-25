@@ -18,6 +18,17 @@ import {
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from "@/components/ui/alert-dialog";
 
 interface Showing {
   showing_id: number;
@@ -36,6 +47,9 @@ export default function ManageShowingsPage() {
   const [error, setError] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [form, setForm] = useState<Partial<Showing>>({ status: true });
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
+  const [saving, setSaving] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -130,16 +144,24 @@ export default function ManageShowingsPage() {
     fetchShowings();
   }
 
-  async function deleteShowing(id: number) {
-    if (!confirm("Are you sure you want to mark this showing inactive?")) return;
+  function promptDelete(showingId: number) {
+    setPendingDeleteId(showingId);
+    setDeleteDialogOpen(true);
+  }
+
+  async function confirmDelete() {
+    if (pendingDeleteId == null) return;
+    setSaving(true);
     const supabase = createClient();
-    const { error } = await supabase.from("showings").update({ status: false }).eq("showing_id", id);
-    if (error) {
-      toast({ title: "Error", description: "Failed to mark showing inactive: " + error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Success", description: "Showing marked inactive!" });
+    const { error } = await supabase.from("showings").update({ status: false }).eq("showing_id", pendingDeleteId);
+    if (error) toast({ title: "Error", description: "Error marking showing inactive: " + error.message, variant: "destructive" });
+    else {
       fetchShowings();
+      toast({ title: "Success", description: "Showing marked inactive!", variant: "default" });
     }
+    setSaving(false);
+    setDeleteDialogOpen(false);
+    setPendingDeleteId(null);
   }
 
   function handleFormChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
@@ -153,7 +175,7 @@ export default function ManageShowingsPage() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">Manage Showings</h1>
         <Button asChild variant="outline">
-          <Link href="/showings">Back to Showings</Link>
+          <Link href="/showings">Browse Showings</Link>
         </Button>
       </div>
       {loading ? (
@@ -244,7 +266,28 @@ export default function ManageShowingsPage() {
                   <TableCell>
                     <div className="flex gap-2">
                       <Button size="sm" variant="outline" onClick={() => startEdit(showing)}>Edit</Button>
-                      <Button size="sm" variant="destructive" onClick={() => deleteShowing(showing.showing_id)}>Mark Inactive</Button>
+                      <AlertDialog open={deleteDialogOpen && pendingDeleteId === showing.showing_id} onOpenChange={open => {
+                        setDeleteDialogOpen(open);
+                        if (!open) setPendingDeleteId(null);
+                      }}>
+                        <AlertDialogTrigger asChild>
+                          <Button size="sm" variant="destructive" onClick={() => promptDelete(showing.showing_id)}>
+                            Mark Inactive
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Mark Showing Inactive</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to mark this showing inactive?
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={confirmDelete} disabled={saving}>Mark Inactive</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </TableCell>
                 </TableRow>

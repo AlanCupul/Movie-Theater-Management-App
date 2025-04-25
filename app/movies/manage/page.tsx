@@ -25,6 +25,7 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
 } from "@/components/ui/alert-dialog";
+import Link from "next/link";
 
 interface Movie {
   movie_id: number;
@@ -152,7 +153,12 @@ export default function ManageMoviesPage() {
     <>
       <Toaster />
       <div className="max-w-6xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6">Manage Movies</h1>
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-3xl font-bold">Manage Movies</h1>
+          <Button asChild variant="outline">
+            <Link href="/movies">Browse Movies</Link>
+          </Button>
+        </div>
 
         {/* Add/Edit Movie Form */}
         <form ref={inputSectionRef} onSubmit={editingId ? handleUpdate : handleAdd} className="mb-8 space-y-4 bg-background border p-4 rounded">
@@ -350,7 +356,7 @@ export default function ManageMoviesPage() {
                           <AlertDialogHeader>
                             <AlertDialogTitle>Mark Movie Inactive</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Are you sure you want to mark <span className="font-semibold">{movie.name}</span> inactive? This action cannot be undone.
+                              Are you sure you want to mark <span className="font-semibold">{movie.name}</span> inactive?
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>

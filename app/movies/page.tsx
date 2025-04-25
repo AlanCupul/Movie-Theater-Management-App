@@ -4,6 +4,7 @@ import { createClient } from "@/utils/supabase/client";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowRight } from "lucide-react";
 
 export default function MoviesPage() {
   const [movies, setMovies] = useState<any[]>([]);
@@ -79,16 +80,6 @@ export default function MoviesPage() {
     fetchFeaturedMovies();
   }, []);
 
-  // Utility to format release date
-  function formatReleaseDate(dateString: string) {
-    if (!dateString) return "";
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  }
-
   // New: next 4, Browse: rest
   const newMovies = movies.slice(0, 4);
   const browseMovies = allMovies;
@@ -117,7 +108,7 @@ export default function MoviesPage() {
                 <CardTitle className="text-lg text-center w-full line-clamp-2">{movie.name}</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col items-center gap-2 pb-4">
-                <Link href={`/movies/${movie.movie_id}`} className="text-primary hover:underline text-xs font-medium">View Showings</Link>
+                <Link href={`/movies/${movie.movie_id}`} className="text-primary/50 hover:text-primary hover:underline text-xs font-medium inline-flex items-center gap-1">View Showings <ArrowRight size={14} /></Link>
               </CardContent>
             </Card>
           ))}
@@ -144,7 +135,7 @@ export default function MoviesPage() {
                 <CardTitle className="text-base text-center w-full line-clamp-2">{movie.name}</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col items-center gap-2 pb-4">
-                <Link href={`/movies/${movie.movie_id}`} className="text-primary hover:underline text-xs font-medium">View Showings</Link>
+              <Link href={`/movies/${movie.movie_id}`} className="text-primary/50 hover:text-primary hover:underline text-xs font-medium inline-flex items-center gap-1">View Showings <ArrowRight size={14} /></Link>
               </CardContent>
             </Card>
           ))}
@@ -172,7 +163,7 @@ export default function MoviesPage() {
                 <CardTitle className="text-base text-center w-full line-clamp-2">{movie.name}</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col items-center gap-2 pb-4">
-                <Link href={`/movies/${movie.movie_id}`} className="text-primary hover:underline text-xs font-medium">View Showings</Link>
+              <Link href={`/movies/${movie.movie_id}`} className="text-primary/50 hover:text-primary hover:underline text-xs font-medium inline-flex items-center gap-1">View Showings <ArrowRight size={14} /></Link>
               </CardContent>
             </Card>
           ))}
@@ -193,10 +184,10 @@ export default function MoviesPage() {
                 </div>
               )}
               <CardHeader className="flex-1 flex flex-col items-center p-2 pb-1">
-                <CardTitle className="text-xs text-center w-full line-clamp-2 font-medium">{movie.name}</CardTitle>
+                <CardTitle className="text-base text-center w-full line-clamp-2">{movie.name}</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col items-center gap-1 pb-2">
-                <Link href={`/movies/${movie.movie_id}`} className="text-primary hover:underline text-xs font-medium">View Showings</Link>
+              <Link href={`/movies/${movie.movie_id}`} className="text-primary/50 hover:text-primary hover:underline text-xs font-medium inline-flex items-center gap-1">View Showings <ArrowRight size={14} /></Link>
               </CardContent>
             </Card>
           ))}

@@ -256,7 +256,7 @@ export default function ManageTheatersPage() {
                         <AlertDialogHeader>
                           <AlertDialogTitle>Mark Theater Inactive</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Are you sure you want to mark theater #{theater.theater_number} as inactive? This action cannot be undone.
+                            Are you sure you want to mark <span className="font-semibold">Theater #{theater.theater_number}</span> as inactive?
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>

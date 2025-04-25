@@ -7,6 +7,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { format, addDays, isSameDay, parseISO } from "date-fns";
+import Link from "next/link";
 
 export default function MovieDetailsPage() {
   const params = useParams();
@@ -17,6 +18,8 @@ export default function MovieDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [dateOptions, setDateOptions] = useState<Date[]>([]);
+  const [description, setDescription] = useState<string | null>(null);
+  const [descLoading, setDescLoading] = useState(true);
 
   useEffect(() => {
     if (!movieId) return;
@@ -47,6 +50,22 @@ export default function MovieDetailsPage() {
     setDateOptions(Array.from({ length: 9 }, (_, i) => addDays(base, i)));
   }, [movieId]);
 
+  useEffect(() => {
+    async function fetchDescription() {
+      setDescLoading(true);
+      if (!movie?.name) return;
+      const res = await fetch("/api/generate-description", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ movieTitle: movie.name }),
+      });
+      const data = await res.json();
+      setDescription(data.description);
+      setDescLoading(false);
+    }
+    fetchDescription();
+  }, [movie?.name]);
+
   function formatShowTime(showTime: string) {
     if (!showTime) return "";
     return new Date(showTime).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
@@ -62,6 +81,12 @@ export default function MovieDetailsPage() {
 
   return (
     <div className="max-w-6xl mx-auto p-6">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-3xl font-bold">Movie Details</h1>
+        <Button asChild variant="outline">
+          <Link href="/movies">Back to Movies</Link>
+        </Button>
+      </div>
       <div className="flex flex-col md:flex-row gap-8 mb-8 items-center md:items-start">
         {movie.movie_poster_url ? (
           <img
@@ -78,6 +103,11 @@ export default function MovieDetailsPage() {
           {typeof movie.duration === "number" && <div>Duration: {movie.duration} min</div>}
           {typeof movie.rating === "number" && <div>Rating: {movie.rating.toFixed(1)} / 10</div>}
           {movie.featured && <div className="text-primary font-semibold">Featured</div>}
+          {descLoading ? (
+            <div className="text-muted-foreground">Generating description with AI...</div>
+          ) : (
+            <div className="mb-4"><span className="font-medium">Movie Description:</span> {description}</div>
+          )}
         </div>
       </div>
       {/* Date Selector Bar (same as Showings page) */}
