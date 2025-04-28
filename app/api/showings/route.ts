@@ -9,9 +9,9 @@ export async function GET() {
     const showings = await prisma.showing.findMany({ orderBy: { showing_id: "asc" } });
     const showingsSerialized = showings.map((showing) => ({
       ...showing,
-      showing_id: showing.showing_id.toString(),
-      movie_id: showing.movie_id.toString(),
-      theater_id: showing.theater_id.toString(),
+      showing_id: showing.showing_id?.toString(),
+      movie_id: showing.movie_id ? showing.movie_id.toString() : null,
+      theater_id: showing.theater_id ? showing.theater_id.toString() : null,
     }));
     return NextResponse.json(showingsSerialized);
   } catch (error) {
