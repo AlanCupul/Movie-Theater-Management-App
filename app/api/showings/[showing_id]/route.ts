@@ -13,9 +13,9 @@ export async function GET(_req: NextRequest, context: any) {
     if (!showing) return NextResponse.json({ error: "Showing not found" }, { status: 404 });
     const showingSerialized = {
       ...showing,
-      showing_id: showing.showing_id.toString(),
-      movie_id: showing.movie_id.toString(),
-      theater_id: showing.theater_id.toString(),
+      showing_id: showing.showing_id?.toString(),
+      movie_id: showing.movie_id ? showing.movie_id.toString() : null,
+      theater_id: showing.theater_id ? showing.theater_id.toString() : null,
     };
     return NextResponse.json(showingSerialized);
   } catch (error) {
@@ -41,9 +41,9 @@ export async function PUT(req: NextRequest, context: any) {
     });
     const showingSerialized = {
       ...showing,
-      showing_id: showing.showing_id.toString(),
-      movie_id: showing.movie_id.toString(),
-      theater_id: showing.theater_id.toString(),
+      showing_id: showing.showing_id?.toString(),
+      movie_id: showing.movie_id ? showing.movie_id.toString() : null,
+      theater_id: showing.theater_id ? showing.theater_id.toString() : null,
     };
     return NextResponse.json(showingSerialized);
   } catch (error) {
@@ -62,9 +62,9 @@ export async function DELETE(_req: NextRequest, context: any) {
     });
     const showingSerialized = {
       ...showing,
-      showing_id: showing.showing_id.toString(),
-      movie_id: showing.movie_id.toString(),
-      theater_id: showing.theater_id.toString(),
+      showing_id: showing.showing_id?.toString(),
+      movie_id: showing.movie_id ? showing.movie_id.toString() : null,
+      theater_id: showing.theater_id ? showing.theater_id.toString() : null,
     };
     return NextResponse.json(showingSerialized);
   } catch (error) {
