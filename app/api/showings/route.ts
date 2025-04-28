@@ -4,9 +4,15 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 // GET /api/showings - List all showings
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
-    const showings = await prisma.showing.findMany({ orderBy: { showing_id: "asc" } });
+    const { searchParams } = new URL(req.url);
+    const movieId = searchParams.get("movie_id");
+    const where = movieId ? { movie_id: Number(movieId) } : undefined;
+    const showings = await prisma.showing.findMany({
+      where,
+      orderBy: { showing_id: "asc" },
+    });
     const showingsSerialized = showings.map((showing) => ({
       ...showing,
       showing_id: showing.showing_id?.toString(),
