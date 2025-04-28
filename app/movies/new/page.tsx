@@ -1,45 +1,40 @@
 "use client";
 import { useEffect, useState } from "react";
-import { createClient } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 
+interface Movie {
+  movie_id: number;
+  name: string;
+  movie_poster_url?: string;
+  release_date?: string;
+}
+
 export default function NewMoviesPage() {
-  const [movies, setMovies] = useState<any[]>([]);
+  const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const supabase = createClient();
     async function fetchNewMovies() {
-      const now = new Date();
-      const thirtyDaysAgo = new Date(now);
-      thirtyDaysAgo.setDate(now.getDate() - 30);
       setLoading(true);
-      const { data, error } = await supabase
-        .from("movies")
-        .select("*")
-        .gte("release_date", thirtyDaysAgo.toISOString())
-        .lte("release_date", now.toISOString())
-        .order("release_date", { ascending: false });
-      if (error) {
-        console.error("Error fetching new movies:", error);
-      } else {
-        setMovies(data || []);
+      try {
+        const res = await fetch("/api/movies");
+        if (!res.ok) throw new Error("Failed to fetch movies");
+        const data: Movie[] = await res.json();
+        const now = new Date();
+        const thirtyDaysAgo = new Date(now);
+        thirtyDaysAgo.setDate(now.getDate() - 30);
+        const newMovies = data.filter(movie => movie.release_date && new Date(movie.release_date) >= thirtyDaysAgo && new Date(movie.release_date) <= now)
+          .sort((a, b) => new Date(b.release_date!).getTime() - new Date(a.release_date!).getTime());
+        setMovies(newMovies);
+      } catch (error) {
+        setMovies([]);
       }
       setLoading(false);
     }
     fetchNewMovies();
   }, []);
-
-  function formatReleaseDate(dateString: string) {
-    if (!dateString) return "";
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  }
 
   return (
     <div className="max-w-6xl mx-auto">

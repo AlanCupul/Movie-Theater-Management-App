@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
-import { createClient } from "@/utils/supabase/client";
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,91 +27,54 @@ export default function ManageTheatersPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
   const { toast } = useToast();
-  const supabase = createClient();
   const router = useRouter();
-  const [authLoading, setAuthLoading] = useState(true);
-  const [user, setUser] = useState<any>(null);
   const inputSectionRef = useRef<HTMLFormElement | null>(null);
 
   useEffect(() => {
     fetchTheaters();
   }, []);
 
-  useEffect(() => {
-    // Client-side auth protection
-    const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.replace("/sign-in");
-      } else {
-        setUser(user);
-      }
-      setAuthLoading(false);
-    };
-    checkAuth();
-  }, [router, supabase]);
-
   async function fetchTheaters() {
     setLoading(true);
-    const { data, error } = await supabase.from("theaters").select("*").order("theater_number");
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
+    try {
+      const res = await fetch("/api/theaters");
+      if (!res.ok) throw new Error("Failed to fetch theaters");
+      const data = await res.json();
       setTheaters(data || []);
+    } catch (error: any) {
+      toast({ title: "Error", description: "Error fetching theaters: " + (error.message || error), variant: "destructive" });
     }
     setLoading(false);
   }
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.theater_number || !form.seat_capacity || !form.status) {
+    if (!form.theater_number || !form.seat_capacity || form.status == null) {
       toast({ title: "Missing Fields", description: "Theater number, seat capacity, and status are required.", variant: "destructive" });
       return;
     }
     setSaving(true);
-    const { error } = await supabase.from("theaters").insert({
-      theater_number: Number(form.theater_number),
-      seat_capacity: Number(form.seat_capacity),
-      status: form.status,
-    });
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Success", description: "Theater added!", variant: "default" });
+    try {
+      const res = await fetch("/api/theaters", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          theater_number: Number(form.theater_number),
+          seat_capacity: Number(form.seat_capacity),
+          status: form.status,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to add theater");
       setForm({ status: true });
       fetchTheaters();
+      toast({ title: "Success", description: "Theater added!" });
+    } catch (error: any) {
+      toast({ title: "Error", description: "Error adding theater: " + (error.message || error), variant: "destructive" });
     }
     setSaving(false);
   }
 
-  async function handleUpdate(e: React.FormEvent) {
-    e.preventDefault();
-    if (!form.theater_number || !form.seat_capacity || !form.status || editingId == null) {
-      toast({ title: "Missing Fields", description: "Theater number, seat capacity, and status are required.", variant: "destructive" });
-      return;
-    }
-    setSaving(true);
-    const { error } = await supabase.from("theaters").update({
-      theater_number: Number(form.theater_number),
-      seat_capacity: Number(form.seat_capacity),
-      status: form.status,
-    }).eq("theater_id", editingId);
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Success", description: "Theater updated!", variant: "default" });
-      setForm({ status: true });
-      setEditingId(null);
-      fetchTheaters();
-    }
-    setSaving(false);
-  }
-
-  function scrollToInput() {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
-  function handleEdit(theater: Theater) {
+  async function handleEdit(theater: Theater) {
     setEditingId(theater.theater_id);
     setForm({
       theater_number: theater.theater_number,
@@ -120,6 +82,38 @@ export default function ManageTheatersPage() {
       status: theater.status ?? true,
     });
     scrollToInput();
+  }
+
+  async function handleUpdate(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form.theater_number || !form.seat_capacity || form.status == null || editingId == null) {
+      toast({ title: "Missing Fields", description: "Theater number, seat capacity, and status are required.", variant: "destructive" });
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/theaters/${editingId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          theater_number: Number(form.theater_number),
+          seat_capacity: Number(form.seat_capacity),
+          status: form.status,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to update theater");
+      setEditingId(null);
+      setForm({ status: true });
+      fetchTheaters();
+      toast({ title: "Success", description: "Theater updated!" });
+    } catch (error: any) {
+      toast({ title: "Error", description: "Error updating theater: " + (error.message || error), variant: "destructive" });
+    }
+    setSaving(false);
+  }
+
+  function scrollToInput() {
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function handleCancelEdit() {
@@ -130,23 +124,19 @@ export default function ManageTheatersPage() {
   async function handleDelete() {
     if (pendingDeleteId == null) return;
     setSaving(true);
-    const { error } = await supabase.from("theaters").update({ status: false }).eq("theater_id", pendingDeleteId);
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Success", description: "Theater marked inactive!", variant: "default" });
+    try {
+      const res = await fetch(`/api/theaters/${pendingDeleteId}`, {
+        method: "DELETE"
+      });
+      if (!res.ok) throw new Error("Failed to mark theater inactive");
       fetchTheaters();
+      toast({ title: "Success", description: "Theater marked inactive!" });
+    } catch (error: any) {
+      toast({ title: "Error", description: "Error marking inactive: " + (error.message || error), variant: "destructive" });
     }
     setSaving(false);
     setDeleteDialogOpen(false);
     setPendingDeleteId(null);
-  }
-
-  if (authLoading) {
-    return <div className="text-center text-muted-foreground py-20">Loading...</div>;
-  }
-  if (!user) {
-    return null;
   }
 
   return (

@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { createClient } from "@/utils/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
@@ -23,22 +22,32 @@ export default function MovieDetailsPage() {
 
   useEffect(() => {
     if (!movieId) return;
-    const supabase = createClient();
     async function fetchMovieAndShowings() {
       setLoading(true);
-      const { data: movieData, error: movieError } = await supabase
-        .from("movies")
-        .select("*")
-        .eq("movie_id", movieId)
-        .single();
+      // Fetch movie details from Prisma API
+      const movieRes = await fetch(`/api/movies/${movieId}`);
+      let movieData = null;
+      if (movieRes.ok) movieData = await movieRes.json();
       let showingsData: any[] = [];
-      if (!movieError && movieData) {
-        const { data: showings, error: showingsError } = await supabase
-          .from("showings")
-          .select("*, theater:theaters(theater_number)")
-          .eq("movie_id", movieId)
-          .order("show_time", { ascending: true });
-        if (!showingsError) showingsData = showings || [];
+      if (movieData) {
+        // Fetch showings for this movie, including theater info
+        const showingsRes = await fetch(`/api/showings?movie_id=${movieId}`);
+        if (showingsRes.ok) {
+          showingsData = await showingsRes.json();
+          // If showings don't have theater info, fetch all theaters and attach
+          if (showingsData.length && !showingsData[0].theater) {
+            const theatersRes = await fetch("/api/theaters");
+            let theaters = [];
+            if (theatersRes.ok) theaters = await theatersRes.json();
+            const theaterMap = Object.fromEntries(theaters.map((t: any) => [Number(t.theater_id), t]));
+            showingsData = showingsData.map((showing: any) => ({
+              ...showing,
+              theater: theaterMap[Number(showing.theater_id)]
+                ? { theater_number: theaterMap[Number(showing.theater_id)].theater_number }
+                : undefined,
+            }));
+          }
+        }
       }
       setMovie(movieData);
       setShowings(showingsData);

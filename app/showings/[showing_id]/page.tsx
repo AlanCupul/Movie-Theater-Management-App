@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { createClient } from "@/utils/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -16,19 +15,30 @@ export default function ShowingDetailsPage() {
 
   useEffect(() => {
     if (!showingId) return;
-    const supabase = createClient();
     async function fetchShowing() {
       setLoading(true);
-      const { data, error } = await supabase
-        .from("showings")
-        .select("*, movie:movies(name, movie_poster_url), theater:theaters(theater_number)")
-        .eq("showing_id", showingId)
-        .single();
-      if (error) {
-        setShowing(null);
-      } else {
-        setShowing(data);
+      // Fetch showing details from Prisma API
+      const res = await fetch(`/api/showings/${showingId}`);
+      let showingData = null;
+      if (res.ok) showingData = await res.json();
+      // Fetch movie and theater info if missing
+      if (showingData) {
+        if (!showingData.movie || !showingData.theater) {
+          const [movieRes, theaterRes] = await Promise.all([
+            fetch(`/api/movies/${showingData.movie_id}`),
+            fetch(`/api/theaters/${showingData.theater_id}`)
+          ]);
+          if (movieRes.ok) {
+            const movie = await movieRes.json();
+            showingData.movie = { name: movie.name, movie_poster_url: movie.movie_poster_url };
+          }
+          if (theaterRes.ok) {
+            const theater = await theaterRes.json();
+            showingData.theater = { theater_number: theater.theater_number };
+          }
+        }
       }
+      setShowing(showingData);
       setLoading(false);
     }
     fetchShowing();
@@ -57,11 +67,6 @@ export default function ShowingDetailsPage() {
           <div><strong>Available Seats:</strong> {showing.available_seats}</div>
         </CardContent>
       </Card>
-      <div className="flex justify-end mt-6">
-        <Button asChild size="lg">
-          <Link href={`/tickets/purchase?showing_id=${showingId}`}>Purchase Tickets</Link>
-        </Button>
-      </div>
     </div>
   );
 }

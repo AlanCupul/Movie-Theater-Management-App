@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
-import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { Toaster } from "@/components/ui/toaster";
@@ -44,7 +43,6 @@ export default function ManageMoviesPage() {
   const [form, setForm] = useState<Partial<Movie>>({ status: true });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
-  const supabase = createClient();
   const router = useRouter();
   const { toast } = useToast();
   const inputSectionRef = useRef<HTMLFormElement | null>(null);
@@ -63,9 +61,14 @@ export default function ManageMoviesPage() {
 
   async function fetchMovies() {
     setLoading(true);
-    const { data, error } = await supabase.from("movies").select("*").order("release_date", { ascending: false });
-    if (error) toast({ title: "Error", description: "Error fetching movies: " + error.message, variant: "destructive" });
-    else setMovies(data || []);
+    try {
+      const res = await fetch("/api/movies");
+      if (!res.ok) throw new Error("Failed to fetch movies");
+      const data = await res.json();
+      setMovies(data || []);
+    } catch (error: any) {
+      toast({ title: "Error", description: "Error fetching movies: " + (error.message || error), variant: "destructive" });
+    }
     setLoading(false);
   }
 
@@ -83,12 +86,18 @@ export default function ManageMoviesPage() {
       setSaving(false);
       return;
     }
-    const { error } = await supabase.from("movies").insert([{ ...form, rating: ratingNum, status: true }]);
-    if (error) toast({ title: "Error", description: "Error adding movie: " + error.message, variant: "destructive" });
-    else {
+    try {
+      const res = await fetch("/api/movies", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...form, rating: ratingNum, status: true }),
+      });
+      if (!res.ok) throw new Error("Failed to add movie");
       setForm({ status: true });
       fetchMovies();
       toast({ title: "Success", description: "Movie added!" });
+    } catch (error: any) {
+      toast({ title: "Error", description: "Error adding movie: " + (error.message || error), variant: "destructive" });
     }
     setSaving(false);
   }
@@ -111,13 +120,19 @@ export default function ManageMoviesPage() {
       setSaving(false);
       return;
     }
-    const { error } = await supabase.from("movies").update({ ...updateFields, rating: ratingNum }).eq("movie_id", editingId);
-    if (error) toast({ title: "Error", description: "Error updating movie: " + error.message, variant: "destructive" });
-    else {
+    try {
+      const res = await fetch(`/api/movies/${editingId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...updateFields, rating: ratingNum }),
+      });
+      if (!res.ok) throw new Error("Failed to update movie");
       setEditingId(null);
       setForm({ status: true });
       fetchMovies();
       toast({ title: "Success", description: "Movie updated!" });
+    } catch (error: any) {
+      toast({ title: "Error", description: "Error updating movie: " + (error.message || error), variant: "destructive" });
     }
     setSaving(false);
   }
@@ -129,11 +144,15 @@ export default function ManageMoviesPage() {
   async function confirmDelete() {
     if (pendingDeleteId == null) return;
     setSaving(true);
-    const { error } = await supabase.from("movies").update({ status: false }).eq("movie_id", pendingDeleteId);
-    if (error) toast({ title: "Error", description: "Error marking movie inactive: " + error.message, variant: "destructive" });
-    else {
+    try {
+      const res = await fetch(`/api/movies/${pendingDeleteId}`, {
+        method: "DELETE"
+      });
+      if (!res.ok) throw new Error("Failed to mark movie inactive");
       fetchMovies();
       toast({ title: "Success", description: "Movie marked inactive!", variant: "default" });
+    } catch (error: any) {
+      toast({ title: "Error", description: "Error marking movie inactive: " + (error.message || error), variant: "destructive" });
     }
     setSaving(false);
     setDeleteDialogOpen(false);

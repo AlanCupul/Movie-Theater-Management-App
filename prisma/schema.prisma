@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Movie {
+  movie_id         BigInt    @id @default(autoincrement())
+  name             String    @unique(map: "unique_movie_name")
+  duration         Int
+  release_date     DateTime  @db.Timestamptz(6)
+  movie_poster_url String?
+  featured         Boolean?  @default(false)
+  rating           Decimal?  @db.Decimal
+  status           Boolean?  @default(true)
+  showings         Showing[]
+
+  @@map("movies")
+}
+
+model Theater {
+  theater_id     BigInt    @id @default(autoincrement())
+  theater_number Int       @unique(map: "unique_theater_number")
+  seat_capacity  Int
+  status         Boolean?  @default(true)
+  showings       Showing[]
+
+  @@map("theaters")
+}
+
+model Showing {
+  showing_id      BigInt       @id @default(autoincrement())
+  movie_id        BigInt?
+  theater_id      BigInt?
+  show_time       DateTime     @db.Timestamptz(6)
+  available_seats Int
+  status          Boolean?     @default(true)
+  movies          Movie?       @relation(fields: [movie_id], references: [movie_id], onDelete: NoAction, onUpdate: NoAction)
+  theaters        Theater?     @relation(fields: [theater_id], references: [theater_id], onDelete: NoAction, onUpdate: NoAction)
+  tickets_sold    TicketSold[]
+
+  @@index([movie_id], map: "idx_showings_movie_id")
+  @@index([theater_id], map: "idx_showings_theater_id")
+  @@map("showings")
+}
+
+model TicketSold {
+  ticket_id   BigInt   @id @default(autoincrement())
+  showing_id  BigInt?
+  seat_number String
+  price       Decimal  @db.Decimal
+  age         String?
+  showings    Showing? @relation(fields: [showing_id], references: [showing_id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([showing_id], map: "idx_tickets_sold_showing_id")
+  @@map("tickets_sold")
+}

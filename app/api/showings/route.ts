@@ -1,0 +1,59 @@
+import { NextRequest, NextResponse } from "next/server";
+import { PrismaClient } from "@prisma/client";
+
+const prisma = new PrismaClient();
+
+// GET /api/showings - List all showings
+export async function GET() {
+  try {
+    const showings = await prisma.showing.findMany({ orderBy: { showing_id: "asc" } });
+    const showingsSerialized = showings.map((showing) => ({
+      ...showing,
+      showing_id: showing.showing_id.toString(),
+      movie_id: showing.movie_id.toString(),
+      theater_id: showing.theater_id.toString(),
+    }));
+    return NextResponse.json(showingsSerialized);
+  } catch (error) {
+    console.error("/api/showings error:", error);
+    return NextResponse.json({ error: String(error) }, { status: 500 });
+  }
+}
+
+// POST /api/showings - Create a new showing
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+
+    // Fetch seat_capacity for the selected theater
+    const theater = await prisma.theater.findUnique({
+      where: { theater_id: Number(body.theater_id) },
+    });
+    if (!theater) {
+      return NextResponse.json({ error: "Theater not found" }, { status: 400 });
+    }
+
+    // Convert show_time to UTC ISO string
+    const show_time = new Date(body.show_time).toISOString();
+
+    const showing = await prisma.showing.create({
+      data: {
+        movie_id: Number(body.movie_id),
+        theater_id: Number(body.theater_id),
+        show_time,
+        available_seats: Math.max(0, Math.min(Number(body.available_seats ?? theater.seat_capacity), theater.seat_capacity)),
+        status: body.status ?? true,
+      },
+    });
+    const showingSerialized = {
+      ...showing,
+      showing_id: showing.showing_id.toString(),
+      movie_id: showing.movie_id.toString(),
+      theater_id: showing.theater_id.toString(),
+    };
+    return NextResponse.json(showingSerialized, { status: 201 });
+  } catch (error) {
+    console.error("/api/showings POST error:", error);
+    return NextResponse.json({ error: String(error) }, { status: 500 });
+  }
+}

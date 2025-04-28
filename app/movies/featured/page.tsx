@@ -1,27 +1,37 @@
 "use client";
 import { useEffect, useState } from "react";
-import { createClient } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 
+interface Movie {
+  movie_id: number;
+  name: string;
+  genre?: string;
+  duration?: number;
+  status: boolean;
+  movie_poster_url?: string;
+  release_date?: string;
+  featured?: boolean;
+}
+
 export default function FeaturedMoviesPage() {
-  const [movies, setMovies] = useState<any[]>([]);
+  const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const supabase = createClient();
     async function fetchFeaturedMovies() {
       setLoading(true);
-      const { data, error } = await supabase
-        .from("movies")
-        .select("*")
-        .eq("featured", true)
-        .order("release_date", { ascending: false });
-      if (error) {
-        console.error("Error fetching featured movies:", error);
-      } else {
-        setMovies(data || []);
+      try {
+        const res = await fetch("/api/movies");
+        if (!res.ok) throw new Error("Failed to fetch movies");
+        const data: Movie[] = await res.json();
+        const featured = data.filter(movie => !!movie.featured)
+          .sort((a, b) => (b.movie_id ?? 0) - (a.movie_id ?? 0))
+          .slice(0, 12);
+        setMovies(featured);
+      } catch (error) {
+        setMovies([]);
       }
       setLoading(false);
     }

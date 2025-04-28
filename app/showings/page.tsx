@@ -1,13 +1,11 @@
 "use client";
 import { useEffect, useState } from "react";
-import { createClient } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { format, addDays, isSameDay, parseISO } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-// import { Button as ShadButton } from "@/components/ui/button";
 
 interface Showing {
   showing_id: number;
@@ -33,18 +31,39 @@ export default function ShowingsPage() {
   const [dateOptions, setDateOptions] = useState<Date[]>([]);
 
   useEffect(() => {
-    const supabase = createClient();
     async function fetchShowings() {
       setLoading(true);
-      // Fetch showings with movie and theater info (including poster)
-      const { data, error } = await supabase
-        .from("showings")
-        .select("*, movie:movies(name, movie_poster_url), theater:theaters(theater_number)")
-        .order("show_time", { ascending: true });
-      if (error) {
-        console.error("Error fetching showings:", error);
-      } else {
+      try {
+        // Fetch showings with movie and theater info (including poster)
+        const res = await fetch("/api/showings");
+        if (!res.ok) throw new Error("Failed to fetch showings");
+        let data = await res.json();
+        // Fetch movies and theaters for enrichment
+        const [moviesRes, theatersRes] = await Promise.all([
+          fetch("/api/movies"),
+          fetch("/api/theaters"),
+        ]);
+        let movies = [];
+        let theaters = [];
+        if (moviesRes.ok) movies = await moviesRes.json();
+        if (theatersRes.ok) theaters = await theatersRes.json();
+        // Map movie_id to movie object
+        const movieMap = Object.fromEntries(movies.map((m: any) => [Number(m.movie_id), m]));
+        const theaterMap = Object.fromEntries(theaters.map((t: any) => [Number(t.theater_id), t]));
+        // Attach movie and theater info to each showing
+        data = data.map((showing: any) => ({
+          ...showing,
+          movie: movieMap[Number(showing.movie_id)]
+            ? { name: movieMap[Number(showing.movie_id)].name, movie_poster_url: movieMap[Number(showing.movie_id)].movie_poster_url }
+            : undefined,
+          theater: theaterMap[Number(showing.theater_id)]
+            ? { theater_number: theaterMap[Number(showing.theater_id)].theater_number }
+            : undefined,
+        }));
         setShowings(data || []);
+      } catch (error) {
+        console.error("Error fetching showings:", error);
+        setShowings([]);
       }
       setLoading(false);
     }

@@ -1,87 +1,70 @@
 "use client";
 import { useEffect, useState } from "react";
-import { createClient } from "@/utils/supabase/client";
-import Link from "next/link";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
+import { Toaster } from "@/components/ui/toaster";
+import { useToast } from "@/hooks/use-toast";
 import { ArrowRight } from "lucide-react";
 
+interface Movie {
+  movie_id: number;
+  name: string;
+  genre?: string;
+  duration?: number;
+  status: boolean;
+  movie_poster_url?: string;
+  release_date?: string;
+  featured?: boolean;
+}
+
 export default function MoviesPage() {
-  const [movies, setMovies] = useState<any[]>([]);
-  const [allMovies, setAllMovies] = useState<any[]>([]);
-  const [upcomingMovies, setUpcomingMovies] = useState<any[]>([]);
-  const [featuredMovies, setFeaturedMovies] = useState<any[]>([]);
+  const [movies, setMovies] = useState<Movie[]>([]);
+  const [allMovies, setAllMovies] = useState<Movie[]>([]);
+  const [upcomingMovies, setUpcomingMovies] = useState<Movie[]>([]);
+  const [featuredMovies, setFeaturedMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
-    const supabase = createClient();
-    async function fetchMovies() {
+    async function fetchAllMovies() {
       setLoading(true);
-      const now = new Date();
-      const thirtyDaysAgo = new Date(now);
-      thirtyDaysAgo.setDate(now.getDate() - 30);
-      // Fetch all movies
-      const { data: all, error: allError } = await supabase
-        .from("movies")
-        .select("*")
-        .eq("status", true)
-        .order("release_date", { ascending: false });
-      if (allError) {
-        console.error("Error fetching all movies:", allError);
-        setAllMovies([]);
-      } else {
-        setAllMovies(all || []);
-      }
-      // Fetch new movies (last 30 days)
-      const { data, error } = await supabase
-        .from("movies")
-        .select("*")
-        .gte("release_date", thirtyDaysAgo.toISOString())
-        .lte("release_date", now.toISOString())
-        .order("release_date", { ascending: false });
-      if (error) {
-        console.error("Error fetching new movies:", error);
-        setMovies([]);
-      } else {
-        setMovies(data || []);
+      try {
+        const res = await fetch("/api/movies");
+        if (!res.ok) throw new Error("Failed to fetch movies");
+        const data: Movie[] = await res.json();
+        setAllMovies(data || []);
+
+        // New Movies: released in last 30 days
+        const now = new Date();
+        const thirtyDaysAgo = new Date(now);
+        thirtyDaysAgo.setDate(now.getDate() - 30);
+        const newMovies = data.filter(movie => movie.release_date && new Date(movie.release_date) >= thirtyDaysAgo && new Date(movie.release_date) <= now)
+          .sort((a, b) => new Date(b.release_date!).getTime() - new Date(a.release_date!).getTime())
+          .slice(0, 4);
+        setMovies(newMovies);
+
+        // Upcoming Movies: release_date > now, order ascending, limit 4
+        const upcoming = data.filter(movie => movie.release_date && new Date(movie.release_date) > now)
+          .sort((a, b) => new Date(a.release_date!).getTime() - new Date(b.release_date!).getTime())
+          .slice(0, 4);
+        setUpcomingMovies(upcoming);
+
+        // Featured Movies: featured true, order by movie_id desc, limit 3
+        const featured = data.filter(movie => !!movie.featured)
+          .sort((a, b) => (b.movie_id ?? 0) - (a.movie_id ?? 0))
+          .slice(0, 3);
+        setFeaturedMovies(featured);
+      } catch (error: any) {
+        toast({ title: "Error", description: "Error fetching movies: " + (error.message || error), variant: "destructive" });
       }
       setLoading(false);
     }
-    // Fetch upcoming movies (release_date > now, earliest first, limit 4)
-    async function fetchUpcomingMovies() {
-      const now = new Date().toISOString();
-      const { data, error } = await supabase
-        .from("movies")
-        .select("*")
-        .gt("release_date", now)
-        .order("release_date", { ascending: true })
-        .limit(4);
-      if (error) {
-        console.error("Error fetching upcoming movies:", error);
-      } else {
-        setUpcomingMovies(data || []);
-      }
-    }
-    async function fetchFeaturedMovies() {
-      const { data, error } = await supabase
-        .from("movies")
-        .select("*")
-        .eq("featured", true)
-        .order("movie_id", { ascending: false })
-        .limit(3);
-      if (error) {
-        console.error("Error fetching featured movies:", error);
-      } else {
-        setFeaturedMovies(data || []);
-      }
-    }
-    fetchMovies();
-    fetchUpcomingMovies();
-    fetchFeaturedMovies();
+    fetchAllMovies();
   }, []);
 
   // New: next 4, Browse: rest
-  const newMovies = movies.slice(0, 4);
+  const newMovies = movies;
   const browseMovies = allMovies;
 
   return (
@@ -97,7 +80,7 @@ export default function MoviesPage() {
           </Button>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {featuredMovies.map((movie) => (
+          {featuredMovies.map((movie: Movie) => (
             <Card key={movie.movie_id} className="flex flex-col h-full">
               {movie.movie_poster_url && (
                 <div className="w-full aspect-[27/40] bg-muted rounded-t overflow-hidden flex items-center justify-center">
@@ -124,7 +107,7 @@ export default function MoviesPage() {
           </Button>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {newMovies.map((movie) => (
+          {newMovies.map((movie: Movie) => (
             <Card key={movie.movie_id} className="flex flex-col h-full">
               {movie.movie_poster_url && (
                 <div className="w-full aspect-[27/40] bg-muted rounded-t overflow-hidden flex items-center justify-center">
@@ -152,7 +135,7 @@ export default function MoviesPage() {
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {upcomingMovies.length === 0 && <div className="col-span-full text-muted-foreground text-center">No upcoming movies found.</div>}
-          {upcomingMovies.map((movie) => (
+          {upcomingMovies.map((movie: Movie) => (
             <Card key={movie.movie_id} className="flex flex-col h-full">
               {movie.movie_poster_url && (
                 <div className="w-full aspect-[27/40] bg-muted rounded-t overflow-hidden flex items-center justify-center">
@@ -176,7 +159,7 @@ export default function MoviesPage() {
           <h2 className="text-2xl font-semibold">Browse Movies</h2>
         </div>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          {browseMovies.map((movie) => (
+          {browseMovies.map((movie: Movie) => (
             <Card key={movie.movie_id} className="flex flex-col h-full">
               {movie.movie_poster_url && (
                 <div className="w-full aspect-[27/40] bg-muted rounded-t overflow-hidden flex items-center justify-center">
@@ -195,7 +178,7 @@ export default function MoviesPage() {
       </section>
 
       {loading && <div className="text-center text-muted-foreground">Loading movies...</div>}
-      {!loading && movies.length === 0 && <div className="text-center text-muted-foreground">No movies found.</div>}
+      {!loading && newMovies.length === 0 && <div className="text-center text-muted-foreground">No movies found.</div>}
     </div>
   );
 }

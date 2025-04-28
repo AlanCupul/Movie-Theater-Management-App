@@ -1,11 +1,10 @@
 "use client";
 import { useEffect, useState } from "react";
-import { createClient } from "@/utils/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { format, parseISO } from "date-fns";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label"
+import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import Link from "next/link";
 import {
@@ -50,25 +49,30 @@ export default function ManageShowingsPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [pendingDeleteId, setPendingDeleteId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
+  const [theaters, setTheaters] = useState<any[]>([]);
+  const [maxSeats, setMaxSeats] = useState<number | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
     fetchShowings();
+    // Fetch all theaters for seat capacity lookup
+    fetch("/api/theaters")
+      .then(res => res.ok ? res.json() : [])
+      .then(data => setTheaters(data || []));
   }, []);
 
   async function fetchShowings() {
     setLoading(true);
     setError(null);
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from("showings")
-      .select("*, movie:movies(name), theater:theaters(theater_number)")
-      .order("show_time", { ascending: true });
-    if (error) {
+    try {
+      const res = await fetch("/api/showings");
+      if (!res.ok) throw new Error("Failed to fetch showings");
+      const data = await res.json();
+      setShowings(data || []);
+    } catch (error: any) {
       setError("Failed to fetch showings");
-      toast({ title: "Error", description: "Error fetching showings: " + error.message, variant: "destructive" });
+      toast({ title: "Error", description: "Error fetching showings: " + (error.message || error), variant: "destructive" });
     }
-    setShowings(data || []);
     setLoading(false);
   }
 
@@ -92,81 +96,69 @@ export default function ManageShowingsPage() {
     setForm({ status: true });
   }
 
-  async function saveEdit() {
-    const supabase = createClient();
-    if (editingId === null) {
-      // Fetch seat_capacity for the selected theater
-      let seat_capacity = 0;
-      if (form.theater_id) {
-        const { data: theaterData, error: theaterError } = await supabase
-          .from("theaters")
-          .select("seat_capacity")
-          .eq("theater_id", form.theater_id)
-          .single();
-        if (theaterError) {
-          toast({ title: "Error", description: "Failed to fetch theater seat capacity: " + theaterError.message, variant: "destructive" });
-          return;
-        }
-        seat_capacity = theaterData?.seat_capacity || 0;
-      }
-      // Convert local datetime-local value to UTC ISO string before saving
-      let show_time_utc = form.show_time;
-      if (form.show_time) {
-        show_time_utc = new Date(form.show_time).toISOString();
-      }
-      const { error } = await supabase.from("showings").insert([{ ...form, show_time: show_time_utc, status: true, available_seats: seat_capacity }]);
-      if (error) {
-        toast({ title: "Error", description: "Failed to create showing: " + error.message, variant: "destructive" });
-        return;
-      } else {
+  async function saveEdit(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      if (editingId === null) {
+        // Create
+        const res = await fetch("/api/showings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        });
+        if (!res.ok) throw new Error("Failed to create showing");
         toast({ title: "Success", description: "Showing added!" });
-      }
-    } else {
-      // Only send valid columns for update
-      const { movie_id, theater_id, show_time, status } = form;
-      // Convert local datetime-local value to UTC ISO string before updating
-      let show_time_utc_update = show_time;
-      if (show_time) {
-        show_time_utc_update = new Date(show_time).toISOString();
-      }
-      const { error } = await supabase
-        .from("showings")
-        .update({ movie_id, theater_id, show_time: show_time_utc_update, status })
-        .eq("showing_id", editingId!);
-      if (error) {
-        toast({ title: "Error", description: "Failed to update showing: " + error.message, variant: "destructive" });
-        return;
       } else {
+        // Update
+        const res = await fetch(`/api/showings/${editingId}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        });
+        if (!res.ok) throw new Error("Failed to update showing");
         toast({ title: "Success", description: "Showing updated!" });
       }
-    }
-    cancelEdit();
-    fetchShowings();
-  }
-
-  function promptDelete(showingId: number) {
-    setPendingDeleteId(showingId);
-    setDeleteDialogOpen(true);
-  }
-
-  async function confirmDelete() {
-    if (pendingDeleteId == null) return;
-    setSaving(true);
-    const supabase = createClient();
-    const { error } = await supabase.from("showings").update({ status: false }).eq("showing_id", pendingDeleteId);
-    if (error) toast({ title: "Error", description: "Error marking showing inactive: " + error.message, variant: "destructive" });
-    else {
+      setForm({ status: true });
+      setEditingId(null);
       fetchShowings();
-      toast({ title: "Success", description: "Showing marked inactive!", variant: "default" });
+    } catch (error: any) {
+      toast({ title: "Error", description: (error.message || error), variant: "destructive" });
     }
     setSaving(false);
-    setDeleteDialogOpen(false);
-    setPendingDeleteId(null);
+  }
+
+  async function handleDelete() {
+    if (!pendingDeleteId) return;
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/showings/${pendingDeleteId}`, {
+        method: "DELETE"
+      });
+      if (!res.ok) throw new Error("Failed to mark showing inactive");
+      fetchShowings();
+      toast({ title: "Success", description: "Showing marked inactive." });
+      setPendingDeleteId(null);
+      setDeleteDialogOpen(false);
+    } catch (error: any) {
+      toast({ title: "Error", description: "Error marking showing inactive: " + (error.message || error), variant: "destructive" });
+    }
+    setSaving(false);
   }
 
   function handleFormChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     const { name, value } = e.target;
-    setForm(f => ({ ...f, [name]: name === "movie_id" || name === "theater_id" ? Number(value) : value }));
+    if (name === "theater_id") {
+      const theater = theaters.find(t => Number(t.theater_id) === Number(value));
+      setMaxSeats(theater ? theater.seat_capacity : null);
+      setForm(f => ({ ...f, [name]: Number(value), available_seats: theater ? Math.min(f.available_seats || 0, theater.seat_capacity) : f.available_seats }));
+    } else if (name === "available_seats") {
+      setForm(f => ({ ...f, [name]: Math.max(0, maxSeats ? Math.min(Number(value), maxSeats) : Number(value)) }));
+    } else if (name === "movie_id") {
+      setForm(f => ({ ...f, [name]: Number(value) }));
+    } else {
+      setForm(f => ({ ...f, [name]: value }));
+    }
   }
 
   return (
@@ -182,11 +174,11 @@ export default function ManageShowingsPage() {
         <div className="text-center py-8">Loading...</div>
       ) : (
         <>
-        {/* Add/Edit Showing Form */}
-        <form onSubmit={e => { e.preventDefault(); saveEdit(); }} className="mb-8 space-y-4 bg-background border p-4 rounded max-w-xl mx-auto">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Add/Edit Showing Form */}
+          <form onSubmit={e => { e.preventDefault(); saveEdit(e); }} className="mb-8 space-y-4 bg-background border p-4 rounded max-w-xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-              <Label htmlFor="show_time">Showtime</Label>
+                <Label htmlFor="show_time">Showtime</Label>
                 <Input
                   required
                   type="datetime-local"
@@ -196,7 +188,7 @@ export default function ManageShowingsPage() {
                 />
               </div>
               <div>
-              <Label htmlFor="movie_id">Movie ID</Label>
+                <Label htmlFor="movie_id">Movie ID</Label>
                 <Input
                   required
                   type="number"
@@ -208,7 +200,7 @@ export default function ManageShowingsPage() {
                 />
               </div>
               <div>
-              <Label htmlFor="theater_id">Theater ID</Label>
+                <Label htmlFor="theater_id">Theater ID</Label>
                 <Input
                   required
                   type="number"
@@ -218,6 +210,26 @@ export default function ManageShowingsPage() {
                   onChange={handleFormChange}
                   placeholder="Theater ID"
                 />
+                {maxSeats !== null && (
+                  <div className="text-xs text-muted-foreground mt-1">Seat Capacity: {maxSeats}</div>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="available_seats">Available Seats</Label>
+                <Input
+                  required
+                  type="number"
+                  name="available_seats"
+                  min={0}
+                  max={maxSeats || undefined}
+                  value={form.available_seats ?? ''}
+                  onChange={handleFormChange}
+                  placeholder="Available Seats"
+                  disabled={maxSeats === null}
+                />
+                {maxSeats !== null && (
+                  <div className="text-xs text-muted-foreground mt-1">Max: {maxSeats}</div>
+                )}
               </div>
               <div className="flex items-center gap-2 mt-6">
                 <Checkbox
@@ -271,7 +283,10 @@ export default function ManageShowingsPage() {
                         if (!open) setPendingDeleteId(null);
                       }}>
                         <AlertDialogTrigger asChild>
-                          <Button size="sm" variant="destructive" onClick={() => promptDelete(showing.showing_id)}>
+                          <Button size="sm" variant="destructive" onClick={() => {
+                            setPendingDeleteId(showing.showing_id);
+                            setDeleteDialogOpen(true);
+                          }}>
                             Mark Inactive
                           </Button>
                         </AlertDialogTrigger>
@@ -284,7 +299,7 @@ export default function ManageShowingsPage() {
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={confirmDelete} disabled={saving}>Mark Inactive</AlertDialogAction>
+                            <AlertDialogAction onClick={handleDelete} disabled={saving}>Mark Inactive</AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>

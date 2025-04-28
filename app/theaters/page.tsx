@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useState } from "react";
-import { createClient } from "@/utils/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -17,18 +16,19 @@ export default function TheatersPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const supabase = createClient();
     async function fetchTheaters() {
       setLoading(true);
-      const { data, error } = await supabase
-        .from("theaters")
-        .select("*")
-        .eq("status", true)
-        .order("theater_number");
-      if (error) {
+      try {
+        const res = await fetch("/api/theaters");
+        if (!res.ok) throw new Error("Failed to fetch theaters");
+        const data = await res.json();
+        const filtered = (data || [])
+          .filter((theater: Theater) => theater.status === true)
+          .sort((a: Theater, b: Theater) => a.theater_number - b.theater_number);
+        setTheaters(filtered);
+      } catch (error) {
         console.error("Error fetching theaters:", error);
-      } else {
-        setTheaters(data || []);
+        setTheaters([]);
       }
       setLoading(false);
     }
