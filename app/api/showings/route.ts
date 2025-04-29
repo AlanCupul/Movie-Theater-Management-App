@@ -3,7 +3,7 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-// GET /api/showings - List all showings
+// GET /api/showings
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
@@ -26,12 +26,12 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST /api/showings - Create a new showing
+// POST /api/showings
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    // Fetch seat_capacity for the selected theater
+    // fetch seat_capacity for selected theater
     const theater = await prisma.theater.findUnique({
       where: { theater_id: Number(body.theater_id) },
     });
@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Theater not found" }, { status: 400 });
     }
 
-    // Convert show_time to UTC ISO string
+    // convert show_time to UTC ISO string
     const show_time = new Date(body.show_time).toISOString();
 
     const showing = await prisma.showing.create({

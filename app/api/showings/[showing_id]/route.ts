@@ -52,7 +52,7 @@ export async function PUT(req: NextRequest, context: any) {
   }
 }
 
-// DELETE /api/showings/[showing_id] - Soft delete a showing
+// DELETE /api/showings/[showing_id]
 export async function DELETE(_req: NextRequest, context: any) {
   try {
     const params = context.params;

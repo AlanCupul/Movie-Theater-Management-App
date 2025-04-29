@@ -168,7 +168,7 @@ export default function ShowingsPage() {
                     <Button
                       key={showing.showing_id}
                       variant="secondary"
-                      className="px-4 py-2 text-sm"
+                      className="px-4 py-2 text-sm bg-[#dd0000] hover:bg-[#c00000] text-white"
                       onClick={() => window.location.href = `/showings/${showing.showing_id}`}
                     >
                       {formatShowTime(showing.show_time)}

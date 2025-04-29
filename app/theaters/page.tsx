@@ -52,15 +52,15 @@ export default function TheatersPage() {
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {theaters.map((theater) => (
-            <Card key={theater.theater_id} className="flex flex-col h-full">
+            <Card key={theater.theater_id} className="flex flex-col h-full bg-[#dd0000] text-white border-none shadow-lg">
               <CardHeader className="flex flex-col items-center p-4 pb-2">
                 <CardTitle className="text-lg text-center w-full font-semibold">
                   Theater {theater.theater_number}
                 </CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col items-center gap-2 pb-4">
-                <div className="text-sm text-muted-foreground">Seat Capacity: {theater.seat_capacity}</div>
-                <div className="text-xs text-muted-foreground">Theater ID: {theater.theater_id}</div>
+                <div className="text-sm text-white/80">Seat Capacity: {theater.seat_capacity}</div>
+                <div className="text-xs text-white/80">Theater ID: {theater.theater_id}</div>
               </CardContent>
             </Card>
           ))}

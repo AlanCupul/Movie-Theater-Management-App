@@ -3,17 +3,15 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-// GET /api/movies - List all movies
+// GET /api/movies
 export async function GET() {
   try {
     const movies = await prisma.movie.findMany({
       orderBy: { movie_id: "asc" },
     });
-    // Serialize BigInt fields
     const moviesSerialized = movies.map((movie) => ({
       ...movie,
       movie_id: movie.movie_id.toString(),
-      // Add more fields if needed
     }));
     return NextResponse.json(moviesSerialized);
   } catch (error) {
@@ -22,7 +20,7 @@ export async function GET() {
   }
 }
 
-// POST /api/movies - Create a movie
+// POST /api/movies
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -37,7 +35,7 @@ export async function POST(req: NextRequest) {
         status: body.status ?? true,
       },
     });
-    // Serialize BigInt field
+
     const movieSerialized = { ...movie, movie_id: movie.movie_id.toString() };
     return NextResponse.json(movieSerialized, { status: 201 });
   } catch (error) {

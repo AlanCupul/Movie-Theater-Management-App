@@ -159,7 +159,17 @@ export default function ManageTheatersPage() {
               type="number"
               min={1}
               value={form.theater_number ?? ""}
-              onChange={e => setForm(f => ({ ...f, theater_number: Number(e.target.value) }))}
+              onChange={e => {
+                const val = e.target.value.trim();
+                if (val === "") {
+                  setForm(f => ({ ...f, theater_number: undefined }));
+                  return;
+                }
+                const numVal = Number(val);
+                if (numVal >= 1) {
+                  setForm(f => ({ ...f, theater_number: numVal }));
+                }
+              }}
               placeholder="Theater Number"
               required
             />
@@ -174,9 +184,17 @@ export default function ManageTheatersPage() {
               max={50}
               value={form.seat_capacity ?? ""}
               onChange={e => {
-                let val = Number(e.target.value);
-                if (val > 50) val = 50;
-                setForm(f => ({ ...f, seat_capacity: val }));
+                const val = e.target.value.trim();
+                if (val === "") {
+                  setForm(f => ({ ...f, seat_capacity: undefined }));
+                  return;
+                }
+                const numVal = Number(val);
+                if (numVal > 50) {
+                  setForm(f => ({ ...f, seat_capacity: 50 }));
+                } else if (numVal >= 1) {
+                  setForm(f => ({ ...f, seat_capacity: numVal }));
+                }
               }}
               placeholder="Seat Capacity (max 50)"
               required

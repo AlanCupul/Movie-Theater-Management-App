@@ -3,7 +3,7 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-// GET /api/movies/[movie_id] - Get a single movie
+// GET /api/movies/[movie_id]
 export async function GET(_req: NextRequest, context: any) {
   try {
     const params = context.params;
@@ -11,7 +11,6 @@ export async function GET(_req: NextRequest, context: any) {
       where: { movie_id: Number(params.movie_id) },
     });
     if (!movie) return NextResponse.json({ error: "Movie not found" }, { status: 404 });
-    // Serialize BigInt field
     const movieSerialized = { ...movie, movie_id: movie.movie_id.toString() };
     return NextResponse.json(movieSerialized);
   } catch (error) {
@@ -20,7 +19,7 @@ export async function GET(_req: NextRequest, context: any) {
   }
 }
 
-// PUT /api/movies/[movie_id] - Update a movie
+// PUT /api/movies/[movie_id]
 export async function PUT(req: NextRequest, context: any) {
   try {
     const params = context.params;
@@ -37,7 +36,7 @@ export async function PUT(req: NextRequest, context: any) {
         status: body.status ?? true,
       },
     });
-    // Serialize BigInt field
+
     const movieSerialized = { ...movie, movie_id: movie.movie_id.toString() };
     return NextResponse.json(movieSerialized);
   } catch (error) {
@@ -46,7 +45,7 @@ export async function PUT(req: NextRequest, context: any) {
   }
 }
 
-// DELETE /api/movies/[movie_id] - Soft delete a movie
+// DELETE /api/movies/[movie_id]
 export async function DELETE(_req: NextRequest, context: any) {
   try {
     const params = (await context).params;
@@ -54,7 +53,7 @@ export async function DELETE(_req: NextRequest, context: any) {
       where: { movie_id: Number(params.movie_id) },
       data: { status: false },
     });
-    // Serialize BigInt field
+
     const movieSerialized = { ...movie, movie_id: movie.movie_id.toString() };
     return NextResponse.json(movieSerialized);
   } catch (error) {

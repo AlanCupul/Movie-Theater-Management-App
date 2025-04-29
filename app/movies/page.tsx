@@ -81,9 +81,9 @@ export default function MoviesPage() {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
           {featuredMovies.map((movie: Movie) => (
-            <Card key={movie.movie_id} className="flex flex-col h-full">
+            <Card key={movie.movie_id} className="flex flex-col h-full bg-[#dd0000] text-white border-none shadow-lg">
               {movie.movie_poster_url && (
-                <div className="w-full aspect-[27/40] bg-muted rounded-t overflow-hidden flex items-center justify-center">
+                <div className="w-full aspect-[27/40] bg-[#c00000] rounded-t overflow-hidden flex items-center justify-center">
                   <img src={movie.movie_poster_url} alt={movie.name} className="object-cover w-full h-full" />
                 </div>
               )}
@@ -91,7 +91,7 @@ export default function MoviesPage() {
                 <CardTitle className="text-lg text-center w-full line-clamp-2">{movie.name}</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col items-center gap-2 pb-4">
-                <Link href={`/movies/${movie.movie_id}`} className="text-primary/50 hover:text-primary hover:underline text-xs font-medium inline-flex items-center gap-1">View Showings <ArrowRight size={14} /></Link>
+                <Link href={`/movies/${movie.movie_id}`} className="text-white/80 hover:text-white hover:underline text-xs font-medium inline-flex items-center gap-1">View Showings <ArrowRight size={14} /></Link>
               </CardContent>
             </Card>
           ))}
@@ -108,9 +108,9 @@ export default function MoviesPage() {
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {newMovies.map((movie: Movie) => (
-            <Card key={movie.movie_id} className="flex flex-col h-full">
+            <Card key={movie.movie_id} className="flex flex-col h-full bg-[#dd0000] text-white border-none shadow-lg">
               {movie.movie_poster_url && (
-                <div className="w-full aspect-[27/40] bg-muted rounded-t overflow-hidden flex items-center justify-center">
+                <div className="w-full aspect-[27/40] bg-[#c00000] rounded-t overflow-hidden flex items-center justify-center">
                   <img src={movie.movie_poster_url} alt={movie.name} className="object-cover w-full h-full" />
                 </div>
               )}
@@ -118,7 +118,7 @@ export default function MoviesPage() {
                 <CardTitle className="text-base text-center w-full line-clamp-2">{movie.name}</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col items-center gap-2 pb-4">
-              <Link href={`/movies/${movie.movie_id}`} className="text-primary/50 hover:text-primary hover:underline text-xs font-medium inline-flex items-center gap-1">View Showings <ArrowRight size={14} /></Link>
+                <Link href={`/movies/${movie.movie_id}`} className="text-white/80 hover:text-white hover:underline text-xs font-medium inline-flex items-center gap-1">View Showings <ArrowRight size={14} /></Link>
               </CardContent>
             </Card>
           ))}
@@ -136,9 +136,9 @@ export default function MoviesPage() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
           {upcomingMovies.length === 0 && <div className="col-span-full text-muted-foreground text-center">No upcoming movies found.</div>}
           {upcomingMovies.map((movie: Movie) => (
-            <Card key={movie.movie_id} className="flex flex-col h-full">
+            <Card key={movie.movie_id} className="flex flex-col h-full bg-[#dd0000] text-white border-none shadow-lg">
               {movie.movie_poster_url && (
-                <div className="w-full aspect-[27/40] bg-muted rounded-t overflow-hidden flex items-center justify-center">
+                <div className="w-full aspect-[27/40] bg-[#c00000] rounded-t overflow-hidden flex items-center justify-center">
                   <img src={movie.movie_poster_url} alt={movie.name} className="object-cover w-full h-full" />
                 </div>
               )}
@@ -146,7 +146,7 @@ export default function MoviesPage() {
                 <CardTitle className="text-base text-center w-full line-clamp-2">{movie.name}</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col items-center gap-2 pb-4">
-              <Link href={`/movies/${movie.movie_id}`} className="text-primary/50 hover:text-primary hover:underline text-xs font-medium inline-flex items-center gap-1">View Showings <ArrowRight size={14} /></Link>
+                <Link href={`/movies/${movie.movie_id}`} className="text-white/80 hover:text-white hover:underline text-xs font-medium inline-flex items-center gap-1">View Showings <ArrowRight size={14} /></Link>
               </CardContent>
             </Card>
           ))}
@@ -160,9 +160,9 @@ export default function MoviesPage() {
         </div>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {browseMovies.map((movie: Movie) => (
-            <Card key={movie.movie_id} className="flex flex-col h-full">
+            <Card key={movie.movie_id} className="flex flex-col h-full bg-[#dd0000] text-white border-none shadow-lg">
               {movie.movie_poster_url && (
-                <div className="w-full aspect-[27/40] bg-muted rounded-t overflow-hidden flex items-center justify-center">
+                <div className="w-full aspect-[27/40] bg-[#c00000] rounded-t overflow-hidden flex items-center justify-center">
                   <img src={movie.movie_poster_url} alt={movie.name} className="object-cover w-full h-full" />
                 </div>
               )}
@@ -170,7 +170,7 @@ export default function MoviesPage() {
                 <CardTitle className="text-base text-center w-full line-clamp-2">{movie.name}</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col items-center gap-1 pb-2">
-              <Link href={`/movies/${movie.movie_id}`} className="text-primary/50 hover:text-primary hover:underline text-xs font-medium inline-flex items-center gap-1">View Showings <ArrowRight size={14} /></Link>
+                <Link href={`/movies/${movie.movie_id}`} className="text-white/80 hover:text-white hover:underline text-xs font-medium inline-flex items-center gap-1">View Showings <ArrowRight size={14} /></Link>
               </CardContent>
             </Card>
           ))}

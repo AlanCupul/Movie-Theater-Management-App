@@ -106,14 +106,14 @@ export default function MovieDetailsPage() {
         ) : (
           <div className="w-60 h-96 bg-muted rounded flex items-center justify-center text-xs text-muted-foreground border">No Poster</div>
         )}
-        <div className="flex-1 flex flex-col gap-4">
+        <div className="flex-1 flex flex-col gap-4 bg-[#dd0000] text-white p-6 rounded-lg">
           <h1 className="text-3xl font-bold mb-2">{movie.name}</h1>
-          <div className="text-muted-foreground">Release Date: {movie.release_date ? format(parseISO(movie.release_date), 'MMMM d, yyyy') : 'Unknown'}</div>
+          <div className="text-white/80">Release Date: {movie.release_date ? format(parseISO(movie.release_date), 'MMMM d, yyyy') : 'Unknown'}</div>
           {typeof movie.duration === "number" && <div>Duration: {movie.duration} min</div>}
           {typeof movie.rating === "number" && <div>Rating: {movie.rating.toFixed(1)} / 10</div>}
-          {movie.featured && <div className="text-primary font-semibold">Featured</div>}
+          {movie.featured && <div className="text-white/80 font-semibold">Featured</div>}
           {descLoading ? (
-            <div className="text-muted-foreground">Generating description with AI...</div>
+            <div className="text-white/80">Generating description with AI...</div>
           ) : (
             <div className="mb-4"><span className="font-medium">Movie Description:</span> {description}</div>
           )}
@@ -160,7 +160,7 @@ export default function MovieDetailsPage() {
             <Button
               key={showing.showing_id}
               variant="secondary"
-              className="px-4 py-2 text-sm"
+              className="px-4 py-2 text-sm bg-[#dd0000] hover:bg-[#c00000] text-white"
               onClick={() => router.push(`/showings/${showing.showing_id}`)}
             >
               {formatShowTime(showing.show_time)}

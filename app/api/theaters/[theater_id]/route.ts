@@ -3,7 +3,7 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-// GET /api/theaters/[theater_id] - Get a single theater
+// GET /api/theaters/[theater_id]
 export async function GET(_req: NextRequest, context: any) {
   try {
     const params = (await context).params;
@@ -25,7 +25,7 @@ export async function GET(_req: NextRequest, context: any) {
   }
 }
 
-// PUT /api/theaters/[theater_id] - Update a theater
+// PUT /api/theaters/[theater_id]
 export async function PUT(req: NextRequest, context: any) {
   try {
     const params = (await context).params;
@@ -52,7 +52,7 @@ export async function PUT(req: NextRequest, context: any) {
   }
 }
 
-// DELETE /api/theaters/[theater_id] - Soft delete a theater
+// DELETE /api/theaters/[theater_id]
 export async function DELETE(_req: NextRequest, context: any) {
   try {
     const params = (await context).params;

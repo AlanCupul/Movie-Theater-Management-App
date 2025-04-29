@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
 interface Movie {
   movie_id: number;
@@ -38,40 +39,31 @@ export default function UpcomingMoviesPage() {
     fetchUpcomingMovies();
   }, []);
 
-  function formatReleaseDate(dateString: string) {
-    if (!dateString) return "";
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  }
-
   return (
-    <div className="max-w-6xl mx-auto pt-2 pb-6 flex flex-col gap-12">
+    <div className="max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-3xl font-bold">Upcoming Movies</h1>
         <Button asChild>
           <Link href="/movies">Back to Movies</Link>
         </Button>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
         {loading ? (
           <div className="col-span-full text-center py-8">Loading...</div>
         ) : movies.length === 0 ? (
           <div className="col-span-full text-center py-8">No upcoming movies found.</div>
         ) : movies.map((movie: Movie) => (
-          <Card key={movie.movie_id} className="flex flex-col h-full">
+          <Card key={movie.movie_id} className="flex flex-col h-full bg-[#dd0000] text-white border-none shadow-lg">
             {movie.movie_poster_url && (
-              <div className="w-full aspect-[27/40] bg-muted rounded-t overflow-hidden flex items-center justify-center">
+              <div className="w-full aspect-[27/40] bg-[#c00000] rounded-t overflow-hidden flex items-center justify-center">
                 <img src={movie.movie_poster_url} alt={movie.name} className="object-cover w-full h-full" />
               </div>
             )}
             <CardHeader className="flex-1 flex flex-col items-center p-4 pb-2">
-              <CardTitle className="text-base text-center w-full line-clamp-2">{movie.name}</CardTitle>
+              <CardTitle className="text-lg text-center w-full line-clamp-2">{movie.name}</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col items-center gap-2 pb-4">
-              <Link href={`/movies/${movie.movie_id}`} className="text-primary hover:underline text-xs font-medium">View Showings</Link>
+              <Link href={`/movies/${movie.movie_id}`} className="text-white/80 hover:text-white hover:underline text-xs font-medium inline-flex items-center gap-1">View Showings <ArrowRight size={14} /></Link>
             </CardContent>
           </Card>
         ))}

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
 interface Movie {
   movie_id: number;
@@ -38,15 +39,6 @@ export default function FeaturedMoviesPage() {
     fetchFeaturedMovies();
   }, []);
 
-  function formatReleaseDate(dateString: string) {
-    if (!dateString) return "";
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  }
-
   return (
     <div className="max-w-6xl mx-auto">
       <div className="flex items-center justify-between mb-6">
@@ -62,9 +54,9 @@ export default function FeaturedMoviesPage() {
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {movies.map((movie) => (
-            <Card key={movie.movie_id} className="flex flex-col h-full">
+            <Card key={movie.movie_id} className="flex flex-col h-full bg-[#dd0000] text-white border-none shadow-lg">
               {movie.movie_poster_url ? (
-                <div className="w-full aspect-[27/40] bg-muted rounded-t overflow-hidden flex items-center justify-center">
+                <div className="w-full aspect-[27/40] bg-[#c00000] rounded-t overflow-hidden flex items-center justify-center">
                   <img
                     src={movie.movie_poster_url}
                     alt={movie.name}
@@ -72,7 +64,7 @@ export default function FeaturedMoviesPage() {
                   />
                 </div>
               ) : (
-                <div className="h-56 w-full flex items-center justify-center bg-muted rounded mb-3 text-muted-foreground">
+                <div className="h-56 w-full flex items-center justify-center bg-[#c00000] rounded mb-3 text-white">
                   No Image
                 </div>
               )}
@@ -80,7 +72,7 @@ export default function FeaturedMoviesPage() {
                 <CardTitle className="text-base text-center w-full line-clamp-2">{movie.name}</CardTitle>
               </CardHeader>
               <CardContent className="flex flex-col items-center gap-2 pb-4">
-                <Link href={`/movies/${movie.movie_id}`} className="text-primary hover:underline text-xs font-medium">View Showings</Link>
+              <Link href={`/movies/${movie.movie_id}`} className="text-white/80 hover:text-white hover:underline text-xs font-medium inline-flex items-center gap-1">View Showings <ArrowRight size={14} /></Link>
               </CardContent>
             </Card>
           ))}

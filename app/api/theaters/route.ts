@@ -3,7 +3,7 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-// GET /api/theaters - List all theaters
+// GET /api/theaters
 export async function GET() {
   try {
     const theaters = await prisma.theater.findMany({ orderBy: { theater_id: "asc" } });
@@ -21,7 +21,7 @@ export async function GET() {
   }
 }
 
-// POST /api/theaters - Create a new theater
+// POST /api/theaters
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
